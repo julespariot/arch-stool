@@ -1,0 +1,703 @@
+/* ---------- Fonts ---------- */
+@font-face {
+  font-family: "Fivo Sans Modern";
+  src: url("../assets/fonts/FivoSansModern-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fivo Sans Modern";
+  src: url("../assets/fonts/FivoSansModern-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fivo Sans Modern";
+  src: url("../assets/fonts/FivoSansModern-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fivo Sans Modern";
+  src: url("../assets/fonts/FivoSansModern-ExtBlack.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- Tokens ---------- */
+:root {
+  --ink: #1c1c1a;
+  --muted: #6b6460;
+  --black: #000000;
+  --white: #ffffff;
+  --yellow: #fec400;
+  --green: #01b552;
+  --dot: #d93b2a;
+
+  --font-display: "Fivo Sans Modern", "Arial Black", sans-serif;
+  --font-body: "Fivo Sans Modern", -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono: "Space Mono", "Courier New", monospace;
+
+  --pad: clamp(24px, 5.7vw, 110px);
+  --pad-y: clamp(60px, 9vw, 130px);
+}
+
+/* ---------- Reset ---------- */
+* { box-sizing: border-box; }
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .btn { transition: none; }
+}
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  background: var(--white);
+}
+img { display: block; max-width: 100%; }
+hr {
+  border: none;
+  border-top: 1px solid var(--black);
+  margin: 0;
+}
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; margin: 0; padding: 0; }
+dl, dd { margin: 0; }
+
+h1, h2 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.94;
+  margin: 0;
+  letter-spacing: -0.01em;
+  /* Safety net: "SPÉCIFICATIONS" is a single unbreakable word that can
+     outgrow its column on narrow phones — without this it silently
+     overflows the section instead of wrapping, causing sideways scroll
+     on the whole page. Harmless elsewhere since it only engages when a
+     word truly doesn't fit. */
+  overflow-wrap: break-word;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+.copy {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 0;
+}
+
+.note {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+.footnote {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--black);
+  margin: 0;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  flex: none;
+  width: fit-content;
+  border: 1px solid var(--black);
+  border-radius: 40px;
+  padding: 10px 32px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1.7;
+  text-transform: uppercase;
+  color: var(--black);
+  white-space: nowrap;
+  transition: background-color 50ms ease;
+}
+.btn--green { background: var(--green); }
+/* Scoped to real pointers: on touch devices :hover otherwise "sticks"
+   on the tapped button until the next tap elsewhere. */
+@media (hover: hover) {
+  .btn:hover { background-color: var(--yellow); }
+}
+.btn--center { align-self: center; }
+.arrow { font-family: var(--font-display); font-weight: 700; margin-left: 2px; }
+
+/* Mobile-only chrome (persistent CTA bar, carousel dot pagers): both are
+   fully styled inside the ≤900px query below and stay hidden above it,
+   so the desktop layout is untouched. */
+.mobile-cta, .dots { display: none; }
+
+/* ---------- Layout base ---------- */
+/* Sections span the full viewport — not capped at 1440px — so
+   background color and edge-to-edge photos reach the true screen edge on
+   screens wider than the 1440px design (otherwise a blank gutter appears
+   on both sides past 1440px). Text columns carry flex-grow:0 below so
+   they hold their design width instead of stretching into that space;
+   the image panel (flex-grow:1) absorbs it instead. Text blocks pad
+   themselves (--pad-y --pad) so image panels can bleed flush to the
+   section edges, matching the Figma frames. */
+.section {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  box-sizing: border-box;
+}
+
+/* Invisible to layout by default — the two .crop photos inside act as if
+   directly nested in .montage__images/.usage__images/.specs__images
+   (exactly as they were before this wrapper existed). Only becomes a
+   real box, and a real scroll container, inside the ≤900px query. */
+.gallery-track { display: contents; }
+
+/* ---------- Image crops ---------- */
+/* .crop img is taken out of flow so the photo's intrinsic size never
+   feeds back into the crop box's own size (aspect-ratio / flex-basis
+   sizing on .crop would otherwise create a cyclic percentage). */
+.crop {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #efece8;
+}
+.crop img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* ================= HERO ================= */
+.hero {
+  align-items: stretch;
+  gap: clamp(24px, 5vw, 80px);
+}
+.hero__content {
+  --hero-pad-y: var(--pad-y);
+  flex: 0 1 460px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(32px, 6vw, 60px);
+  padding: var(--hero-pad-y) 0 var(--hero-pad-y) var(--pad);
+}
+.hero__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+/* Desktop: pinned to the top of the column instead of drifting with the
+   centered block below it. Absolute positioning is relative to the
+   padding BOX's outer edge, not the content edge on either axis — plain
+   top:0/left:0 would sit above AND to the left of where the padding puts
+   everything else (flush with the section's true corner, misaligned
+   with h1/copy below it). Matching both to hero__content's own padding
+   (--hero-pad-y, --pad) lines it up with that text exactly, and keeps
+   the two in sync if that padding is ever tightened (see the
+   short-viewport override below).
+   hero__content only becomes the positioning context here, scoped to
+   desktop — mobile needs .hero__eyebrow positioned against .hero
+   instead (see the photo-overlay badge further down, in the ≤900px
+   query), since on mobile the photo it sits on is hero__content's
+   sibling, not its descendant. Making hero__content position:relative
+   unconditionally silently broke that: the eyebrow would resolve
+   against the text block instead of the section, landing in the text
+   flow below the photo rather than over it. */
+@media (min-width: 901px) {
+  .hero__content { position: relative; }
+  .hero__eyebrow {
+    position: absolute;
+    top: var(--hero-pad-y);
+    left: var(--pad);
+  }
+}
+.logo {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dot);
+  flex: none;
+}
+.hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.hero__text h1 {
+  font-size: clamp(40px, 6vw, 76px);
+}
+.hero__text .copy { max-width: 400px; }
+.hero__image {
+  flex: 1 1 500px;
+}
+
+/* ================= MONTAGE ================= */
+.montage {
+  align-items: stretch;
+  gap: clamp(24px, 5vw, 80px);
+}
+.montage__images {
+  flex: 1 1 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.montage__images .crop { flex: 1 1 50%; }
+.montage__content {
+  flex: 0 1 600px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 32px;
+  /* Right edge kept tighter than the shared --pad (which grows up to
+     110px on very wide screens) so "LE MONTAGE" has room to stay on one
+     line — this column's basis was already widened by 100px (from the
+     shared 500px) to borrow space from the image panel; capping this
+     padding at 56px instead of letting it balloon avoids needing to
+     borrow any more than that. */
+  padding: var(--pad-y) clamp(24px, 4vw, 56px) var(--pad-y) 0;
+}
+.montage__content h2 { font-size: clamp(40px, 6vw, 76px); }
+.montage__content .copy { max-width: 550px; }
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
+}
+.list li {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.montage__content .btn { align-self: flex-start; }
+
+/* ================= USAGE ================= */
+.usage {
+  position: relative;
+  flex-direction: column;
+  gap: clamp(24px, 4vw, 48px);
+  background: var(--yellow);
+}
+.usage__top {
+  padding: clamp(40px, 7vw, 70px) var(--pad) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1030px;
+}
+.usage__top h2 {
+  font-size: clamp(40px, 6vw, 76px);
+  color: var(--ink);
+}
+.usage__top .copy { color: var(--ink); }
+.usage__images {
+  position: relative;
+  display: flex;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+}
+.crop--livingroom, .crop--kidroom {
+  flex: 1 1 50%;
+  /* Cancel the generic .crop height:100% — inside this row these are
+     stretched (cross-axis) by the flex algorithm itself; an explicit
+     percentage height here resolves to 0 instead of the stretched size. */
+  height: auto;
+}
+/* The button lives inside .usage__images (not .usage) so it always
+   overlays the photos themselves, at their shared edge — in a row at
+   desktop, in a stack at mobile — rather than the section as a whole. */
+.usage .btn {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(24px, 4vw, 48px);
+  transform: translateX(-50%);
+}
+
+/* ================= SPECS ================= */
+.specs {
+  align-items: stretch;
+  gap: clamp(24px, 5vw, 80px);
+}
+.specs__images {
+  flex: 1 1 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.specs__images .crop { flex: 1 1 50%; }
+.specs__content {
+  flex: 0 1 560px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+  padding: var(--pad-y) var(--pad) var(--pad-y) 0;
+}
+.specs__content h2 { font-size: clamp(40px, 6vw, 76px); }
+.specs__content > .copy { max-width: 640px; }
+
+.spec-list { display: flex; flex-direction: column; }
+.spec-row {
+  display: flex;
+  gap: clamp(16px, 3vw, 40px);
+  padding: 16px 0;
+  color: var(--black);
+}
+.spec-row dt {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  flex: 0 0 150px;
+}
+.spec-row dd {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.7;
+}
+.specs__content .footnote { padding-top: 4px; }
+.specs__content .btn { align-self: flex-start; margin-top: 8px; }
+
+/* ================= PROJECT ================= */
+.project {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: var(--yellow);
+  gap: 24px;
+  padding: var(--pad-y) var(--pad);
+}
+.project .kicker { color: var(--ink); }
+.project h2 {
+  font-size: clamp(48px, 8vw, 76px);
+  color: var(--ink);
+}
+.project .copy {
+  color: var(--ink);
+  max-width: 640px;
+  margin: 0 auto;
+}
+.project__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.project__actions .btn { align-self: center; }
+
+/* ================= RESPONSIVE ================= */
+
+/* Short desktop windows — a 13" MacBook Pro's default scaled resolution
+   (1280×800, and less once the tab/URL bar take their share) is the
+   common case — don't leave enough room for Hero/Montage's centered text
+   column to fit without pushing the CTA button toward or past the
+   bottom edge. This isn't a mobile-width case (still side-by-side with
+   the photo), so it needs its own query keyed on height, not width;
+   901px+ keeps it out of the mobile stacked layout above. Desktop
+   monitors (900px+ tall) are untouched — this only kicks in when
+   height is tight. Padding/gap alone (kept centered, not top-aligned —
+   flex-start read as glued to the "PROJET EN COURS" eyebrow above it)
+   already shrinks the column enough to fit without cropping the button. */
+@media (min-width: 901px) and (max-height: 820px) {
+  .hero__content, .montage__content {
+    justify-content: center;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    gap: 24px;
+  }
+  /* Keeps the pinned eyebrow (top: var(--hero-pad-y)) matching this
+     shorter padding instead of the wide-screen default. */
+  .hero__content { --hero-pad-y: 40px; }
+  .hero__text { gap: 16px; }
+}
+
+/* Tablet & below: stack the text/image halves of every split section. */
+@media (max-width: 900px) {
+  .section { min-height: auto; }
+  .hero, .montage, .specs {
+    flex-direction: column;
+  }
+  .hero__image, .montage__images, .specs__images {
+    order: -1;
+    flex: none;
+    width: 100%;
+  }
+  /* .hero__image holds a single photo, so the ratio belongs on the panel
+     itself. Height is the normal 4:3 (75vw for a 100%-wide panel) plus a
+     flat +110px so the stool isn't cropped at the bottom. */
+  .hero__image { height: calc(75vw + 110px); }
+  .hero__content, .montage__content, .specs__content {
+    padding: clamp(32px, 8vw, 60px) var(--pad) !important;
+  }
+  /* No extra flex gap under the photo — .hero__content's own top padding
+     above is already the spacing; adding both stacked too much air
+     between the image and the text. */
+  .hero { gap: 0; }
+  /* Trimmed well below the shared clamp above: the Hero is the one
+     section that ends on a short note line rather than a button, so the
+     usual bottom padding left too much white space before Montage's
+     photo — enough that its top edge never showed on a typical phone.
+     Tightening it (padding-top and the internal gap too, alongside
+     bottom) lets that next photo peek in as a scroll cue on common
+     screen heights — the now-taller image (+110px) doesn't leave much
+     room to spare, so it's a shorter phone (iPhone SE-ish) that may
+     still land exactly at the note with no peek. */
+  .hero__content {
+    /* Cancels the desktop flex-basis:460px — in this column layout that's
+       a HEIGHT basis, so the box was sitting at a fixed 460px tall no
+       matter how much the padding/gap below were trimmed, with
+       justify-content:center just re-centering the smaller content
+       inside that unchanged box instead of actually shrinking it. */
+    flex: none;
+    /* Both sides 20px more than Montage's own text-to-photo gap: top is
+       the space up to Hero's own photo, bottom is the space down to
+       Montage's photo (the scroll-peek content right after Hero ends). */
+    padding-top: clamp(52px, calc(8vw + 20px), 80px) !important;
+    padding-bottom: clamp(52px, calc(8vw + 20px), 80px) !important;
+    gap: 16px;
+  }
+  .hero__text { gap: 16px; }
+  /* Logo + status sit directly on the photo (top-left), like a badge,
+     instead of repeating in the text block below it. .hero__image is the
+     first flex item (order:-1) so it renders flush with .hero's own top
+     edge — positioning against .hero itself lands the badge on the photo
+     without having to move .hero__eyebrow in the markup. */
+  .hero { position: relative; }
+  .hero__eyebrow {
+    position: absolute;
+    top: 20px;
+    left: var(--pad);
+    right: var(--pad);
+    z-index: 1;
+    text-shadow: 0 1px 6px rgba(255, 255, 255, 0.7);
+  }
+
+  /* --- Swipeable photo galleries -------------------------------------
+     Montage, Multi usage and Specs each show two photos. On mobile they
+     become a one-photo-at-a-time horizontal carousel (scroll-snap, no
+     visible scrollbar) with a small dot pager — the way product photos
+     work on MAAP/Tylko rather than a static stack or a cramped
+     side-by-side pair. Ratio is unchanged (4:3, same as before), each
+     photo just fills the full slide instead of half of it.
+
+     .gallery-track is `display:contents` outside this query (see base
+     rule), so at desktop it's invisible to layout and the two .crop
+     photos are effectively still direct children of .montage__images
+     etc., exactly as before — none of the existing desktop rules had to
+     change. Here it becomes the actual scroll container, kept separate
+     from .montage__images/.usage__images/.specs__images themselves so
+     the dot pager (a sibling, not a track child) can stay pinned over
+     the visible photo instead of scrolling away with it. */
+  .montage__images,
+  .usage__images,
+  .specs__images {
+    position: relative;
+    width: 100%;
+  }
+  .gallery-track {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .gallery-track::-webkit-scrollbar {
+    display: none;
+  }
+  .gallery-track .crop {
+    flex: 0 0 100%;
+    /* Cancels the generic .crop{height:100%} — the track has no height
+       of its own to give a percentage against (it's meant to come FROM
+       the photo via aspect-ratio), so left as 100% it's a cyclic
+       reference that resolves to 0 instead. */
+    height: auto;
+    aspect-ratio: 4 / 3;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .dots {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+  }
+  .dots .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    transition: background-color 150ms ease, transform 150ms ease;
+  }
+  .dots .dot.is-active {
+    background: var(--white);
+    transform: scale(1.3);
+  }
+
+  /* The in-section "next" buttons are replaced by the persistent bottom
+     bar below, so the sections themselves stay focused on the photos
+     and copy. The Project section keeps its own — Instagram/LinkedIn
+     are destinations you choose between, not a "continue" action. */
+  .hero__content > .btn,
+  .montage__content > .btn,
+  .usage__images > .btn,
+  .specs__content > .btn {
+    display: none;
+  }
+
+  .spec-row { flex-direction: column; gap: 6px; }
+  .spec-row dt { flex: none; }
+  .hero__text .copy, .montage__content .copy, .specs__content > .copy { max-width: none; }
+
+  /* --- Persistent bottom action bar -----------------------------------
+     Room is made for it so the last bit of the page is never hidden
+     behind the fixed bar. That reserve is only ever visible past the end
+     of .project (the last section) — the bar stays on top everywhere
+     else — so it's added to .project's own bottom padding rather than
+     main's: that way the reserved strip is still filled with the
+     section's yellow background instead of showing bare white beneath
+     it, which is also where the bar hides itself (see .mobile-cta
+     [data-current="project"] below) since Project already has its own
+     two destination buttons in view. */
+  .project { padding-bottom: calc(var(--pad-y) + 84px); }
+  .mobile-cta {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    justify-content: center;
+    padding: 12px var(--pad) calc(12px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.88);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    transition: transform 250ms ease;
+  }
+  .mobile-cta__link {
+    display: none;
+    width: 100%;
+    max-width: 280px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .mobile-cta[data-current="hero"] .mobile-cta__link[data-for="hero"],
+  .mobile-cta[data-current="montage"] .mobile-cta__link[data-for="montage"],
+  .mobile-cta[data-current="usage"] .mobile-cta__link[data-for="usage"],
+  .mobile-cta[data-current="specs"] .mobile-cta__link[data-for="specs"] {
+    display: inline-flex;
+  }
+  /* No "continue" action makes sense once you've reached the last
+     section — it has its own two destination buttons already. */
+  .mobile-cta[data-current="project"],
+  .mobile-cta:not([data-current]) {
+    transform: translateY(120%);
+  }
+
+  /* --- Scroll reveal ---------------------------------------------------
+     A quiet fade/rise as each section's text block arrives, off by
+     default so a slow JS load never leaves copy stuck invisible. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 500ms ease, transform 500ms ease;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+  .mobile-cta { transition: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Phones: tighten spacing, keep the eyebrow row and CTAs from overflowing. */
+@media (max-width: 480px) {
+  :root {
+    --pad-y: clamp(40px, 12vw, 90px);
+  }
+  .hero__text h1,
+  .montage__content h2 {
+    font-size: clamp(34px, 12vw, 76px);
+  }
+  /* "SPÉCIFICATIONS" is one long unbreakable word — a size that's fine
+     for "LE MONTAGE" or "THE ARCH STOOL" (which can wrap between words)
+     runs this one past its column. Sized down specifically so it still
+     fits on a single line on narrow phones. */
+  .specs__content h2 { font-size: clamp(26px, 9vw, 76px); }
+  .project h2 { font-size: clamp(38px, 13vw, 76px); }
+  .hero__eyebrow { flex-wrap: wrap; row-gap: 8px; }
+  .montage__content, .usage__top, .specs__content, .project {
+    gap: 20px;
+  }
+  .btn {
+    white-space: normal;
+    text-align: center;
+    padding: 10px 24px;
+  }
+  .spec-row { padding: 12px 0; }
+}
